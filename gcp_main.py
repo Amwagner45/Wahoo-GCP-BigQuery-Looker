@@ -3,8 +3,8 @@ import dotenv
 import requests
 import json
 import pandas as pd
-import datetime
-from datetime import timedelta
+import logging
+from google.cloud import storage
 
 dotenv_file = dotenv.find_dotenv()
 dotenv.load_dotenv(dotenv_file)
@@ -12,40 +12,18 @@ dotenv.load_dotenv(dotenv_file)
 pd.options.display.max_columns = 100
 
 BASEURL = "api.wahooligan.com"
-SCOPE = "user_read+workouts_read+workouts_write"
 CLIENTID = os.environ.get("CLIENTID")
 CLIENTSECRET = os.environ.get("CLIENTSECRET")
-REDIRECTURI = os.environ.get("REDIRECTURI")
-AUTHORIZATIONCODE = os.environ.get("AUTHORIZATIONCODE")
 ACCESSTOKEN = os.environ.get("ACCESSTOKEN")
 REFRESHTOKEN = os.environ.get("REFRESHTOKEN")
+PROJECTID = os.environ.get("learngcp-408315")
+TOPICID = os.environ.get("workout_data_call_topic")
 
 
 # Helper function to update environment variable
 def update_env(key, value):
     os.environ[key] = value
     dotenv.set_key(dotenv_file, key, os.environ[key])
-
-
-def authorize():
-    url = f"https://{BASEURL}/oauth/authorize?client_id={CLIENTID}&redirect_uri={REDIRECTURI}&scope={SCOPE}&response_type=code"
-    print(url)
-    AUTHORIZATIONCODE = input("\nEnter code:")
-    update_env("AUTHORIZATIONCODE", AUTHORIZATIONCODE)
-    return AUTHORIZATIONCODE
-
-
-def gettokens(AUTHORIZATIONCODE):
-    url = f"https://{BASEURL}/oauth/token?client_secret={CLIENTSECRET}&code={AUTHORIZATIONCODE}&redirect_uri={REDIRECTURI}&grant_type=authorization_code&client_id={CLIENTID}"
-    r = requests.post(url)
-    data = r.json()
-    print(data)
-    access_token = data["access_token"]
-    refresh_token = data["refresh_token"]
-
-    update_env("ACCESSTOKEN", access_token)
-    update_env("REFRESHTOKEN", refresh_token)
-    return access_token, refresh_token
 
 
 def refreshtokens(refresh_token):
@@ -61,7 +39,7 @@ def refreshtokens(refresh_token):
     return access_token, refresh_token
 
 
-def get_workouts(access_token, per_page=3):
+def get_workouts(access_token, per_page=7):
     r = requests.get(
         "https://api.wahooligan.com/v1/workouts",
         headers={"Authorization": f"Bearer {access_token}"},
@@ -85,25 +63,37 @@ def transform_data(data):
     ]
     df = df.drop(columns_to_drop, axis=1)
     df = df.convert_dtypes(infer_objects=True)
-    today = datetime.datetime.today()
-    yesterday = today - timedelta(days=1)
-    df = df[df["starts"].str[0:10] == yesterday.strftime("%Y-%m-%d")]
     return df
 
 
-# authorize()
-# gettokens(AUTHORIZATIONCODE)
-# refreshtokens(REFRESHTOKEN)
+def quickstart():
+    storage_client = storage.Client()
+    bucket_name = "kappa-bucket-1"
+    blobs = storage_client.list_blobs(bucket_name)
+
+    for blob in blobs:
+        print(blob.name)
+
+
+refreshtokens(REFRESHTOKEN)
 data = get_workouts(ACCESSTOKEN)
 df = transform_data(data)
-json_message = df.to_json(orient="index")
 print(df.head)
-print(json_message)
 
-"""
-1. Optional allow for authorization
-2. Have access_token, refresh token, expiration_date stored in environment variables
-3. Refresh the access_token and update environment variables
-4. Use token to get data for past week
-5. Add only new data to Bigquery
-"""
+
+# def pull_from_api(event, context):
+#     logging.basicConfig(level=logging.INFO)
+
+#     # insert entries into table
+#     response = requests.get(f"{BASEURL}?key={API_KEY}&q={Q}")
+#     json_response = response.json()
+
+#     # publish data to the topic
+#     publisher = pubsub_v1.PublisherClient()
+#     # The `topic_path` method creates a fully qualified identifier
+#     # in the form `projects/{project_id}/topics/{topic_id}`
+#     topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
+
+#     message = json.dumps(json_response).encode("utf-8")
+#     future1 = publisher.publish(topic_path, message)
+#     print(future1.result())
