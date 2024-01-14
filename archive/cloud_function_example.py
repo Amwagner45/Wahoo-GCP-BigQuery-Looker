@@ -88,6 +88,3 @@ def main(cloud_event):
     bucket.blob(f"wahoo_{today}.csv").upload_from_string(df.to_csv(), "text/csv")
 
     print("Completed job: {}")
-
-
-'access_token': 'XWgw-zFoQqbWz0ls8CaM1N_9g7rsCVQQqSm-TOtojo4', 'token_type': 'Bearer', 'expires_in': 7200, 'refresh_token': 'XGOS2MsC_JSNzIChcKqJfdk1bTyfG0wBPXtCqgid_8E', 'scope': 'user_read workouts_read workouts_write', 'created_at': 1704671113
