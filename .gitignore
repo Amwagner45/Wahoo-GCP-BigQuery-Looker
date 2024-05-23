@@ -4,6 +4,9 @@ config.py
 __pycache__/
 *.py[cod]
 *$py.class
+service_account_creds.json
+other/
+test.py
 
 # C extensions
 *.so
