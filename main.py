@@ -21,9 +21,7 @@ def extract_workout_data():
     ACCESSTOKEN = access_secret_version("wahoo_access_token")
     REFRESHTOKEN = access_secret_version("wahoo_refresh_token")
 
-    ACCESSTOKEN, REFRESHTOKEN = refreshtokens(
-        REFRESHTOKEN, BASEURL, CLIENTID, CLIENTSECRET
-    )
+    ACCESSTOKEN, REFRESHTOKEN = refreshtokens(REFRESHTOKEN, CLIENTID, CLIENTSECRET)
     workout_data = get_workouts(ACCESSTOKEN)
     df = pd.json_normalize(workout_data)
 
