@@ -6,6 +6,7 @@ __pycache__/
 *$py.class
 service_account_creds.json
 other/
+test.py
 
 # C extensions
 *.so
